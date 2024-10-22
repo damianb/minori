@@ -1,0 +1,189 @@
+networks:
+  homelab:
+    name: 'homelab'
+
+volumes:
+  minori_mariadb_data:
+  minori_imgs:
+  minori_thumbs:
+
+secrets:
+  minori_mysql_root_password:
+    file: './minori_mysql_root_password'
+  minori_mysql_password:
+    file: './minori_mysql_password'
+
+services:
+  # todo remove
+  minori-proxy:
+    container_name: 'minori-proxy'
+    image: 'nginxproxy/nginx-proxy:latest'
+    restart: 'unless-stopped'
+    logging:
+      driver: 'json-file'
+      options:
+        max-file: '10'
+        max-size: '10m'
+    environment:
+      DEFAULT_HOST: 'minori.homelab.local'
+    networks:
+    - 'homelab'
+    ports:
+    - '0.0.0.0:80:80'
+    # - '0.0.0.0:443:443'
+    volumes:
+    - type: 'bind'
+      source: '/var/run/docker.sock'
+      target: '/tmp/docker.sock'
+      read_only: true
+    - type: 'bind'
+      source: '$PWD/nginx'
+      target: '/etc/nginx/vhost.d'
+      read_only: true
+    healthcheck:
+      test: 'service nginx status >/dev/null || exit 1'
+      start_period: '1m'
+      interval: '3m'
+      retries: 3
+
+  minori-ui:
+    container_name: 'minori-ui'
+    image: 'nginx:alpine'
+    restart: 'unless-stopped'
+    logging:
+      driver: 'json-file'
+      options:
+        max-file: '10'
+        max-size: '10m'
+    environment:
+      VIRTUAL_HOST: 'minori.homelab.local'
+      HTTPS_METHOD: 'noredirect'
+    networks:
+      homelab:
+    volumes:
+    # todo: volume handling? bake assets directly into image?
+    - type: 'bind'
+      source: './ui'
+      target: '/usr/share/nginx/html'
+      read_only: true
+    healthcheck:
+      test: 'curl -IsSLf http://localhost/ >/dev/null || exit 1'
+      start_period: '1m'
+      interval: '3m'
+      retries: 3
+
+  minori-img:
+    container_name: 'minori-img'
+    image: 'nginx:alpine'
+    restart: 'unless-stopped'
+    logging:
+      driver: 'json-file'
+      options:
+        max-file: '10'
+        max-size: '10m'
+    environment:
+      VIRTUAL_HOST: 'minori-img.homelab.local'
+      HTTPS_METHOD: 'noredirect'
+    networks:
+      homelab:
+    volumes:
+    - type: 'volume'
+      source: 'minori_imgs'
+      target: '/usr/share/nginx/html/images'
+      read_only: true
+    - type: 'volume'
+      source: 'minori_thumbs'
+      target: '/usr/share/nginx/html/thumbs'
+      read_only: true
+    healthcheck:
+      test: 'curl -IsSLf http://localhost/ >/dev/null || exit 1'
+      start_period: '1m'
+      interval: '3m'
+      retries: 3
+
+  minori-db:
+    container_name: 'minori-db'
+    image: 'mariadb:10.10'
+    restart: 'unless-stopped'
+    logging:
+      driver: 'json-file'
+      options:
+        max-file: '10'
+        max-size: '10m'
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_bin
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: '/run/secrets/minori_mysql_root_password'
+      MYSQL_DATABASE: 'minori'
+      MYSQL_USER: 'minori'
+      MYSQL_PASSWORD_FILE: '/run/secrets/minori_mysql_password'
+    networks:
+      homelab:
+        aliases:
+        - 'minori-db'
+    volumes:
+    - type: 'volume'
+      source: 'minori_mariadb_data'
+      target: '/var/lib/mysql'
+    healthcheck:
+      test: 'mysqladmin ping --silent'
+      start_period: '1m'
+      interval: '3m'
+      retries: 3
+    ports:
+    - '0.0.0.0:3306:3306'
+    secrets:
+    - 'minori_mysql_root_password'
+    - 'minori_mysql_password'
+
+  minori-api:
+    container_name: 'minori-api'
+    build:
+      context: './api'
+      dockerfile: 'Dockerfile'
+      network: 'host'
+      args:
+        GROUP_REGISTRY: '' # redacted
+    logging:
+      driver: 'json-file'
+      options:
+        max-file: '10'
+        max-size: '10m'
+    environment:
+      VIRTUAL_HOST: 'minori-api.homelab.local'
+      HTTPS_METHOD: 'noredirect'
+
+      IMAGE_UPLOAD_PATH: '/srv/images'
+      IMAGE_THUMBNAIL_PATH: '/srv/thumbs'
+
+      CORS_DOMAIN_ALLOW: 'http://minori.homelab.local'
+      FRONTEND_BASE_FQDN: 'http://minori.homelab.local'
+      IMAGE_BASE_FQDN: 'http://minori-img.homelab.local'
+      DEBUG_MODE: 'true'
+
+      DB_USERNAME: 'minori'
+      DB_PASSWORD_FILE: '/run/secrets/minori_mysql_password'
+      DB_HOST: 'minori-db'
+      DB_NAME: 'minori'
+    networks:
+      homelab:
+        aliases:
+        - 'minori-api'
+    volumes:
+    - type: 'volume'
+      source: 'minori_imgs'
+      target: '/srv/images'
+    - type: 'volume'
+      source: 'minori_thumbs'
+      target: '/srv/thumbs'
+    - type: 'tmpfs'
+      target: '/tmp'
+      tmpfs:
+        size: '500M'
+    ports:
+    - '0.0.0.0:5000:5000'
+    secrets:
+    - 'minori_mysql_password'
+    depends_on:
+    - 'minori-db'

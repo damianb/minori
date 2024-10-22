@@ -1,0 +1,7 @@
+**/.venv/
+**/*.egg-info
+api/**/__pycache__
+ansible/.lint.yml
+*_mysql_password
+*_mysql_root_password
+*_ip_mask_secret

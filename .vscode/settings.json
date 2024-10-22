@@ -1,0 +1,10 @@
+{
+  "files.exclude": {
+    ".venv/": true,
+    "api/.venv/": true,
+    "api/*.egg-info/": true,
+    "api/**/__pycache__/": true
+  },
+  "pylint.args": [ "--rcfile=./api/.pylintrc" ],
+  "python.analysis.typeCheckingMode": "basic"
+}

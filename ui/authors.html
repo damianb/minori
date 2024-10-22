@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>minori</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="album image gallery tool">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="/favicon.ico">
+  <!-- <link rel="icon" href="/favicon.svg" type="image/svg+xml"> -->
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+  <link rel="stylesheet" href="/css/minori.css">
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="authors-page">
+  <header>
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+      <div class="container">
+        <div class="d-flex align-items-center">
+          <img src="/images/logo.png" width="36" height="36" id="homelab-icon">
+          <a href="/"><span class="navbar-brand ms-3 text-muted"><strong>minori</strong></span></a>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="py-2">
+    <div class="container py-5" id="pending-load-spinner">
+      <div class="d-flex justify-content-center my-5 py-5">
+        <div class="spinner-border my-5">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    </div>
+    <div id="wrapper" class="container px-0 pending-load">
+      <div class="py-2">
+        <div class="container py-2">
+          <div class="row justify-content-between">
+            <div class="d-flex align-items-center col-5">
+              <h3>all authors <span class="badge rounded-pill bg-primary collapse fs-6 ms-2" id="authors-count"></span></h3>
+            </div>
+            <div class="btn-toolbar d-flex justify-content-end col-7" role="toolbar">
+              <div class="btn-group">
+                <button class="btn btn-secondary btn-sm capture px-3" type="button" id="reload" title="reload">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise my-1" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container py-3">
+          <div class="list-group" id="authors"></div>
+        </div>
+
+        <div class="container pt-1" id="pagination-hoist"></div>
+      </div>
+    </div>
+  </main>
+  <div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { MinoriAuthorlistUI } from '/js/ui/authorlist.js';
+    const app = new MinoriAuthorlistUI();
+    globalThis.app = app;
+  </script>
+</body>
+</html>

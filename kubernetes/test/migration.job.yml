@@ -1,0 +1,39 @@
+apiVersion: 'batch/v1'
+kind: 'Job'
+metadata:
+  name: 'db-migration'
+  namespace: 'minori-test'
+spec:
+  completions: 1
+  parallelism: 1
+  completionMode: 'NonIndexed'
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 30
+  template:
+    spec:
+      restartPolicy: 'OnFailure'
+      containers:
+      - name: 'db-migration'
+        image: 'REDACTED/minori/api:test'
+        imagePullPolicy: 'Always'
+        env:
+        - name: 'DB_HOST'
+          valueFrom:
+            configMapKeyRef:
+              name: 'db-configmap'
+              key: 'database_url'
+        - name: 'DB_USERNAME'
+          value: 'minori'
+        - name: 'DB_PASSWORD'
+          valueFrom:
+            secretKeyRef:
+              name: 'db-secret'
+              key: 'mariadb-password'
+        - name: 'DB_NAME'
+          value: 'minori'
+        command:
+        - '/usr/local/bin/alembic'
+        - 'upgrade'
+        - 'head'
+      imagePullSecrets:
+        - name: 'docker-registry-secret'

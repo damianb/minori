@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>minori</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="album image gallery tool">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="/favicon.ico">
+  <!-- <link rel="icon" href="/favicon.svg" type="image/svg+xml"> -->
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+  <link rel="stylesheet" href="/css/minori.css">
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="album-edit-page">
+  <header>
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+      <div class="container">
+        <div class="d-flex align-items-center">
+          <img src="/images/logo.png" width="36" height="36" id="homelab-icon">
+          <a href="/"><span class="navbar-brand ms-3 text-muted"><strong>minori</strong></span></a>
+        </div>
+        <div class="d-flex align-items-center">
+          <div id="album-return" class="collapse">
+            <a href="#" class="btn btn-dark link-primary" role="button" aria-label="Album list" title="Album list">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-arrow-90deg-left" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M1.146 4.854a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H12.5A2.5 2.5 0 0 1 15 6.5v8a.5.5 0 0 1-1 0v-8A1.5 1.5 0 0 0 12.5 5H2.707l3.147 3.146a.5.5 0 1 1-.708.708z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <dropzone class="collapse"></dropzone>
+  <main class="py-3">
+    <div class="container py-5 collapse" id="content-missing-msg">
+      <div class="d-flex justify-content-center align-items-center my-5 py-5">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+        </svg>
+        <span class="deleted-notice mx-3">The specified album or image was not found.</span>
+      </div>
+    </div>
+    <div class="container py-5" id="pending-load-spinner">
+      <div class="d-flex justify-content-center my-5 py-5">
+        <div class="spinner-border my-5">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    </div>
+    <div id="wrapper" class="container px-0 pending-load">
+      <div class="py-2 container" id="album-fields">
+        <div class="row">
+          <div class="col-12 col-lg-8 album-fields-border">
+            <div class="container">
+              <div class="row justify-content-between">
+                <div class="col-xs-12 col-sm-6 px-0">
+                  <h3>album details</h3>
+                </div>
+                <div class="btn-toolbar d-flex justify-content-end col-xs-12 col-sm-6" role="toolbar">
+                  <!--
+                  <button type="button" class="btn btn-secondary capture" title="Rebuild thumbnails" id="album-thumbnails-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-images" viewBox="0 0 16 16">
+                      <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/>
+                      <path d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2M14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1M2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1z"/>
+                    </svg>
+                    <span>Rebuild thumbnails</span>
+                  </button>
+                  -->
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-warning capture collapse" title="Toggle visibility" id="album-hide-button">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill " viewBox="0 0 16 16">
+                        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+                      </svg>
+                      <span>Visible</span>
+                    </button>
+                  </div>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-warning capture" title="Toggle visibility" id="album-show-button">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash-fill" viewBox="0 0 16 16">
+                        <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7 7 0 0 0 2.79-.588M5.21 3.088A7 7 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474z"/>
+                        <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12z"/>
+                      </svg>
+                      <span>Hidden</span>
+                    </button>
+                  </div>
+                  <div class="btn-group ms-2">
+                    <button type="button" class="btn btn-danger capture disabled" title="Delete album" id="album-delete-button">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="container">
+                  <div class="row mt-2 align-items-center">
+                    <div class="col-lg-2 col-3 text-end pt-2">
+                      <label for="title" class="form-label">title</label>
+                    </div>
+                    <div class="col-lg-10 col-9">
+                      <input type="text" class="form-control" id="title" placeholder="Untitled album">
+                    </div>
+                  </div>
+                  <div class="row mt-2 align-items-center">
+                    <div class="col-lg-2 col-3 text-end pt-2">
+                      <label for="author" class="form-label">author</label>
+                    </div>
+                    <div class="col-lg-10 col-9">
+                      <input type="text" class="form-control" id="author" placeholder="Unknown author">
+                    </div>
+                  </div>
+                  <div class="row mt-2 align-items-center">
+                    <div class="col-lg-2 col-3 text-end pt-2">
+                      <label for="description" class="form-label">description</label>
+                    </div>
+                    <div class="col-lg-10 col-9">
+                      <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                  </div>
+                  <div class="row mt-2 align-items-center">
+                    <div class="col-lg-2 col-3 text-end pt-2">
+                      <label for="url" class="form-label">url</label>
+                    </div>
+                    <div class="col-lg-10 col-9">
+                      <input type="text" class="form-control" id="url" placeholder="https://www.site.tld/">
+                    </div>
+                  </div>
+                  <div class="row mt-4 px-5 align-items-center">
+                    <button type="submit" id="save-fields" class="btn btn-primary">Save changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-4 pt-4 pt-lg-0">
+            <h3 class="ms-0 ms-lg-2 mb-0 mb-lg-5">upload</h3>
+            <div class="container pt-3 pt-lg-5">
+              <div class="row d-flex align-items-center px-4">
+                <input type="file" class="form-control" id="file" accept=".zip,jpeg,.jpg,.png,.gif,.cbz,.webp,application/zip,image/jpeg,image/png,image/gif,image/webp">
+              </div>
+              <div class="row pt-4 px-5">
+                <button type="button" class="btn btn-outline-primary" id="upload">Upload</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="py-4">
+        <div class="container py-2">
+          <div class="row justify-content-between">
+            <div class="d-flex align-items-center col-xs-12 col-sm-6">
+              <h3>images</h3> <span class="badge rounded-pill bg-primary collapse fs-6 ms-3 mb-1" id="images-count"></span>
+            </div>
+            <div class="btn-toolbar d-flex justify-content-end col-xs-12 col-sm-6" role="toolbar">
+              <div class="btn-group">
+                <button class="btn btn-warning btn-sm capture px-3" type="button" id="deletion-safety" title="Enable image deletion">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                  </svg>
+                  &nbsp;<span>Enable image deletion</span>
+                </button>
+                <button class="btn btn-secondary btn-sm capture px-3" type="button" id="reload" title="reload">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise my-1" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container pt-3">
+          <div class="row row-cols-2 row-cols-md-4 row-cols-xl-6 g-2 g-lg-4 mx-auto" id="images"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+  <script type="module">
+    import { MinoriEditAlbumUI } from '/js/ui/editalbum.js';
+    const app = new MinoriEditAlbumUI();
+    globalThis.app = app;
+  </script>
+</body>
+</html>

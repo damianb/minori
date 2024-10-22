@@ -1,0 +1,165 @@
+html {
+  overflow-y: scroll;
+  /* min-width: 445px; */
+}
+
+header a {
+  text-decoration: none;
+}
+
+div.navbar.navbar-dark {
+  background-color: #131313 !important;
+}
+
+img.missing-image {
+  background-color: #999;
+}
+
+minori-album .smalltext, a.minori-album-list-entry .smalltext {
+  font-size: 0.9rem;
+}
+
+a.minori-album-list-entry.album-disabled > .album-title, minori-album.album-disabled .album-title {
+  font-style: italic;
+  text-decoration: underline dotted #a33 1px;
+}
+
+a.minori-album-list-entry.album-new > .album-title, minori-album.album-new .album-title {
+  text-decoration: underline dashed #096 1px;
+}
+
+/* workaround for Firefox for Android issue where you cannot disable the native longpress contextmenu */
+/* span.image-thumbnail {
+  background-position: center;
+  background-repeat: no-repeat;
+} */
+
+/* do not allow svgs inside of buttons to capture mouse events (let them bubble up to the button itself) */
+button.capture > svg, button.capture > svg > path, button.capture > span, a.capture > svg, a.capture > svg > path {
+  pointer-events: none;
+}
+
+.upload-options label {
+  font-size: small;
+}
+
+@media (prefers-color-scheme:dark) {
+  .form-control:disabled, .form-control[readonly] {
+    background-color: #333 !important;
+    color: #c2c2c2 !important;
+  }
+}
+
+.pending-load {
+  /* filter: opacity(0); */
+  display: none;
+}
+
+#content-missing-msg svg, #content-blocked-msg svg {
+  color: #a00;
+  width: 50px;
+  height: 50px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page-link:not(.disabled) {
+    background-color: #2b2b2b;
+    color: #3877b8;
+  }
+}
+
+minori-image-page img {
+  max-width: 100%;
+  max-height: calc(100vh - 8.5rem);
+  object-fit: cover;
+}
+
+.pagination.pagination-lg .page-link svg {
+  margin-top: -2px;
+}
+
+.pagination-lg .page-link {
+  padding: .4rem .8rem !important;
+  font-size: 1rem !important;
+}
+
+@media (min-width: 992px) {
+  .album-fields-border {
+    border-right: 1px solid #495057;
+  }
+}
+
+@media (min-width: 576px) {
+  body.view-page minori-image-page img {
+    border-radius: 3px;
+  }
+}
+
+@media (min-width: 768px) {
+  img.album-card-rounding {
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+.p-2point5 {
+  padding: 0.75rem !important;
+}
+
+minori-image-page .btn-toolbar button svg {
+  margin-top: -2px;
+}
+
+.album-edit-page button > svg:has(+ span) {
+  margin-top: -0.1rem;
+}
+
+body.album-edit-page input::placeholder {
+  color: rgba(222, 226, 230, 0.4) !important;
+}
+
+body.album-edit-page minori-image-page .card-footer {
+  background: none !important;
+}
+
+#album-return a {
+  background-color: rgb(43, 43, 43) !important;
+  color: rgb(56, 119, 184) !important;
+}
+
+#album-return a:hover {
+  background-color: rgb(43, 48, 53) !important;
+  color: rgb(139, 185, 254) !important;
+}
+
+#album-return a svg {
+  margin-top: -2px;
+}
+
+dropzone {
+  box-sizing: border-box;
+  /* display: none; */
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  z-index: 99999;
+  background: rgba(96, 167, 220, 0.25);
+  border: 5px dashed rgba(96, 167, 220)
+}
+
+.text-justify {
+  text-align: justify;
+}
+
+.dotted-underline {
+  text-decoration: dotted underline;
+  /* text-decoration-style: dotted !important; */
+}
+
+.has-author-alias {
+  text-decoration: dotted underline;
+}

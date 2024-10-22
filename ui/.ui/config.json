@@ -1,0 +1,5 @@
+{
+  "api_url": "http://minori-api.homelab.local",
+  "image_base_url": "http://minori-img.homelab.local",
+  "allow_maint_mode": true
+}

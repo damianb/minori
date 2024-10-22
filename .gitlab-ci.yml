@@ -1,0 +1,171 @@
+---
+
+stages:
+- 'lint'
+# - 'test'
+- 'build'
+- 'migrate'
+- 'deploy'
+
+variables:
+  PYTHON_VERSION: '3.12'
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+
+.kaniko-build:
+  stage: 'build'
+  image:
+    name: '${GROUP_REGISTRY}/common-containers/kaniko:latest'
+  tags:
+  - '${ARCH}'
+  script:
+  - 'mkdir -p /kaniko/.docker'
+  - |
+    cat <<- EOF > /kaniko/.docker/config.json
+    {
+      "auths": {
+        "$CI_REGISTRY": { "auth": "$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64 | tr -d '\n')" },
+        "$CI_DEPENDENCY_PROXY_SERVER": { "auth": "$(echo -n ${CI_DEPENDENCY_PROXY_USER}:${CI_DEPENDENCY_PROXY_PASSWORD} | base64 | tr -d '\n')" }
+      }
+    }
+    EOF
+  - >
+    /kaniko/executor
+    --context $CI_PROJECT_DIR/${TYPE}
+    --dockerfile $CI_PROJECT_DIR/${TYPE}/Dockerfile
+    --destination ${CI_REGISTRY_IMAGE}/${TYPE}:${TAG_VERSION}
+    --build-arg CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX=${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}
+    --build-arg GROUP_REGISTRY=${GROUP_REGISTRY}
+    --build-arg PYTHON_VERSION=${PYTHON_VERSION}
+
+.db-deploy:
+  stage: 'migrate'
+  image:
+    name: '${GROUP_REGISTRY}/common-containers/kubectl:latest'
+  tags:
+  - 'amd64'
+  script:
+  - 'kubectl config use-context ${KUBE_CLUSTER_CONTEXT}'
+  - 'kubectl apply -f ./kubernetes/${ENV_TYPE}/migration.job.yml'
+  - |
+    kubectl wait --for=condition=complete --namespace=${TARGET_ENV} --timeout=300s job/db-migration &
+    completion_pid=$!
+    kubectl wait --for=condition=failed --namespace=${TARGET_ENV} --timeout=300s job/db-migration && exit 1 &
+    failure_pid=$!
+    wait -n $completion_pid $failure_pid
+
+.deploy:
+  stage: 'deploy'
+  image:
+    name: '${GROUP_REGISTRY}/common-containers/kubectl:latest'
+  tags:
+  - 'amd64'
+  script:
+  - 'kubectl config use-context ${KUBE_CLUSTER_CONTEXT}'
+  - 'kubectl patch deployment -n ${TARGET_ENV} ${TYPE}-svc -p "{\"spec\": {\"template\": {\"metadata\": { \"labels\": {  \"redeploy\": \"$(date +%s)\"}}}}}"'
+
+pylint:
+  stage: 'lint'
+  image:
+    name: '${GROUP_REGISTRY}/common-containers/pylint:${PYTHON_VERSION}'
+  tags:
+  - 'amd64'
+  before_script:
+  - 'python -m pip install --progress-bar off --quiet --no-input --editable ./api/'
+  script:
+  - 'find ./api/ -type f -iname "*.py" -print0 | xargs -0 python -m pylint --rcfile ./api/.pylintrc'
+  rules:
+  - if: '($CI_PIPELINE_SOURCE == "push") && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH) && ($CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH)'
+    allow_failure: true
+    changes:
+    - 'api/.pylintrc'
+    - 'api/*.py'
+    - 'api/**/*.py'
+  - if: '($CI_PIPELINE_SOURCE == "push") && (($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH) || ($CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH))'
+    changes:
+    - 'api/.pylintrc'
+    - 'api/*.py'
+    - 'api/**/*.py'
+
+image:test:
+  extends: '.kaniko-build'
+  variables:
+    TAG_VERSION: 'test'
+  parallel:
+    matrix:
+    - TYPE: ['api', 'ui']
+      ARCH: ['amd64']
+  rules:
+  - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "webide" || $CI_PIPELINE_SOURCE == "api") && ($FORCE_BUILD == "all" || $FORCE_BUILD == "images-test")'
+  - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "test"'
+    changes:
+    - '${TYPE}/*'
+    - '${TYPE}/**/*'
+
+image:prod:
+  extends: '.kaniko-build'
+  variables:
+    TAG_VERSION: 'latest'
+  parallel:
+    matrix:
+    - TYPE: ['api', 'ui']
+      ARCH: ['amd64']
+  rules:
+  - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "webide" || $CI_PIPELINE_SOURCE == "api") && ($FORCE_BUILD == "all" || $FORCE_BUILD == "images")'
+  - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    changes:
+    - '${TYPE}/*'
+    - '${TYPE}/**/*'
+
+db-deploy:test:
+  extends: '.db-deploy'
+  variables:
+    TARGET_ENV: 'minori-test'
+    ENV_TYPE: 'test'
+  rules:
+  - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "webide" || $CI_PIPELINE_SOURCE == "api") && ($FORCE_BUILD == "all" || ($FORCE_BUILD == "deploy" && ($DEPLOY_ENV == "all" || $DEPLOY_ENV == "test")))'
+  - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "test"'
+    changes:
+    - 'api/migrations/*'
+    - 'api/migrations/**/*'
+    - 'kubernetes/test/*'
+
+db-deploy:prod:
+  extends: '.db-deploy'
+  variables:
+    TARGET_ENV: 'minori'
+    ENV_TYPE: 'prod'
+  rules:
+  - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "webide" || $CI_PIPELINE_SOURCE == "api") && ($FORCE_BUILD == "all" || ($FORCE_BUILD == "deploy" && ($DEPLOY_ENV == "all" || $DEPLOY_ENV == "prod")))'
+  - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    changes:
+    - 'api/migrations/*'
+    - 'api/migrations/**/*'
+    - 'kubernetes/prod/*'
+
+deploy:test:
+  extends: '.deploy'
+  variables:
+    TARGET_ENV: 'minori-test'
+  parallel:
+    matrix:
+    - TYPE: ['api', 'ui']
+  rules:
+  - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "webide" || $CI_PIPELINE_SOURCE == "api") && ($FORCE_BUILD == "all" || ($FORCE_BUILD == "deploy" && ($DEPLOY_ENV == "all" || $DEPLOY_ENV == "test")))'
+  - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "test"'
+    changes:
+    - '${TYPE}/*'
+    - '${TYPE}/**/*'
+
+deploy:prod:
+  extends: '.deploy'
+  variables:
+    TARGET_ENV: 'minori'
+  parallel:
+    matrix:
+    - TYPE: ['api', 'ui']
+  rules:
+  - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "webide" || $CI_PIPELINE_SOURCE == "api") && ($FORCE_BUILD == "all" || ($FORCE_BUILD == "deploy" && ($DEPLOY_ENV == "all" || $DEPLOY_ENV == "prod")))'
+  - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    changes:
+    - '${TYPE}/*'
+    - '${TYPE}/**/*'
